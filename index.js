@@ -8,7 +8,7 @@ const Map = require('collections/map');
 
 const pluginName = 'gulp-vuemaker';
 
-module.exports = function(file, opt) {
+module.exports = function() {
 
   let components = new Map();
 
@@ -16,17 +16,8 @@ module.exports = function(file, opt) {
    * Detect the type of the file
    */
   function detectKind(ext) {
+    // Set element + optional attribute
     switch (ext) {
-      case '.js':
-        return {
-          tag: 'script',
-          lang: null,
-        };
-      case '.coffee':
-        return {
-          tag: 'script',
-          lang: 'coffee',
-        };
       case '.css':
         return {
           tag: 'style',
@@ -46,6 +37,16 @@ module.exports = function(file, opt) {
         return {
           tag: 'template',
           lang: 'jade',
+        };
+      case '.js':
+        return {
+          tag: 'script',
+          lang: null,
+        };
+      case '.coffee':
+        return {
+          tag: 'script',
+          lang: 'coffee',
         };
       default:
         return null;
@@ -81,25 +82,31 @@ module.exports = function(file, opt) {
    * Flush the files
    */
   function flush(cb) {
-    _.forEach(components.entries(), function(component, idx) {
+    _.forEach(components.entries(), function(component) {
 
-      let elements = _.map(component[1].entries(), function(item, text) {
-        let content = '';
-        if (item[0].lang) {
-          content = '<' + item[0].tag + ' lang="' + item[0].lang + '">\n' +
+      let elements = _.map(component[1].entries(), function(item) {
+        let element = {};
+        let attribute = (item[0].lang) ? ' lang="' + item[0].lang + '"' : '';
+
+        // Set type (for sorting) and content
+        element.type = item[0].tag;
+        element.content = '<' + item[0].tag + attribute + '>\n' +
            item[1] +
            '</' + item[0].tag + '>\n\n';
-        } else {
-          content = '<' + item[0].tag + '>\n'
-          + item[1] +
-          '</' + item[0].tag + '>\n\n';
-        }
-        return content;
+
+        return element;
       });
 
+      // Sort elements by type property
+      let order = ['style', 'template', 'script'];
+      elements = _.sortBy(elements, function(o) {
+        return _.indexOf(order, o.type);
+      });
+
+      // New file with content property
       this.push(new gutil.File({
         path: component[0],
-        contents: new Buffer(elements.join('')),
+        contents: new Buffer(_.map(elements, 'content').join('')),
       }));
 
     }.bind(this));
