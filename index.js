@@ -1,70 +1,108 @@
-var through = require('through2')
-var path = require('path')
-var gutil = require('gulp-util')
-var _ = require('lodash')
-var Map = require('collections/map')
+const through = require('through2');
+const path = require('path');
+const gutil = require('gulp-util');
+const _ = require('lodash');
+const Map = require('collections/map');
 
-var pluginName = 'gulp-vuemaker'
+const pluginName = 'gulp-vuemaker';
 
-module.exports = function (file, opt) {
+module.exports = function(file, opt) {
 
-  var components = new Map()
+  let components = new Map();
 
   /*
    * Detect the type of the file
    */
-  function detectKind (ext) {
+  function detectKind(ext) {
     switch (ext) {
       case '.js':
-        return 'script'
+        return {
+          tag: 'script',
+          lang: null,
+        };
+      case '.coffee':
+        return {
+          tag: 'script',
+          lang: 'coffee',
+        };
       case '.css':
-        return 'style'
+        return {
+          tag: 'style',
+          lang: null,
+        };
+      case '.scss':
+        return {
+          tag: 'style',
+          lang: 'sass',
+        };
       case '.html':
-        return 'template'
+        return {
+          tag: 'template',
+          lang: null,
+        };
+      case '.jade':
+        return {
+          tag: 'template',
+          lang: 'jade',
+        };
       default:
-        return null
+        return null;
     }
   }
 
   /*
    * Transform the files
    */
-  function transform (file, encoding, cb) {
-    if (file.isNull()) return cb()
-    if (file.isStream()) return cb(new gutil.PluginError(pluginName, 'Streaming not supported'))
+  function transform(file, encoding, cb) {
+    if (file.isNull()) {
+      return cb();
+    }
+    if (file.isStream()) {
+      return cb(new gutil.PluginError(pluginName, 'Streaming not supported'));
+    }
 
-    var kind = detectKind(path.extname(file.path))
+    let kind = detectKind(path.extname(file.path));
     if (kind === null) {
-      return cb()
+      return cb();
     }
 
-    var componentName = gutil.replaceExtension(file.relative, '.vue')
+    let componentName = gutil.replaceExtension(file.relative, '.vue');
     if (!components.has(componentName)) {
-      components.set(componentName, new Map())
+      components.set(componentName, new Map());
     }
-    components.get(componentName).set(kind, file.contents.toString(encoding))
+    components.get(componentName).set(kind, file.contents.toString(encoding));
 
-    return cb()
+    return cb();
   }
 
   /*
-   * flush the files
+   * Flush the files
    */
-  function flush (cb) {
-    _.forEach(components.entries(), function (component, idx) {
+  function flush(cb) {
+    _.forEach(components.entries(), function(component, idx) {
 
-      var elements = _.map(component[1].entries(), function (item, text) {
-        return '<' + item[0] + '>\n' + item[1] + '</' + item[0] + '>\n\n'
-      })
+      let elements = _.map(component[1].entries(), function(item, text) {
+        let content = '';
+        if (item[0].lang) {
+          content = '<' + item[0].tag + ' lang="' + item[0].lang + '">\n' +
+           item[1] +
+           '</' + item[0].tag + '>\n\n';
+        } else {
+          content = '<' + item[0].tag + '>\n'
+          + item[1] +
+          '</' + item[0].tag + '>\n\n';
+        }
+        return content;
+      });
 
       this.push(new gutil.File({
         path: component[0],
-        contents: new Buffer(elements.join(''))
-      }))
+        contents: new Buffer(elements.join('')),
+      }));
 
-    }.bind(this))
-    cb()
+    }.bind(this));
+    cb();
   }
 
-  return through.obj(transform, flush)
-}
+  return through.obj(transform, flush);
+};
