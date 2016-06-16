@@ -28,6 +28,11 @@ module.exports = function() {
           tag: 'style',
           lang: 'sass',
         };
+      case '.styl':
+        return {
+          tag: 'style',
+          lang: 'stylus',
+        };
       case '.html':
         return {
           tag: 'template',
@@ -51,6 +56,21 @@ module.exports = function() {
       default:
         return null;
     }
+  }
+
+  /**
+   * Check if firstline is:
+   *   1 line comment multiline
+   *   with "vue" and "scoped"
+   *
+   * Usage: /* vue:scoped *(\)/
+   */
+  function isScoped(content) {
+    let endLine = content.indexOf('\n');
+    let re = /^\/\*.*vue.*scoped.*\*\/$/;
+    let str = content.slice(0, endLine);
+
+    return (str.match(re) === null) ? false : true;
   }
 
   /*
@@ -87,10 +107,11 @@ module.exports = function() {
       let elements = _.map(component[1].entries(), function(item) {
         let element = {};
         let attribute = (item[0].lang) ? ' lang="' + item[0].lang + '"' : '';
-
+        // Check if scoped
+        let scoped = (isScoped(item[1])) ? ' scoped' : '';
         // Set type (for sorting) and content
         element.type = item[0].tag;
-        element.content = '<' + item[0].tag + attribute + '>\n' +
+        element.content = '<' + item[0].tag + attribute + scoped + '>\n' +
            item[1] +
            '</' + item[0].tag + '>\n\n';
 

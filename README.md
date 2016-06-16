@@ -6,7 +6,7 @@
 </tr>
 <tr>
 <td>Description</td>
-<td>Combine .html, .css and .js files into .vue components</td>
+<td>Combine .html|jade, .css\scss and .js|coffee files into .vue components</td>
 </tr>
 <tr>
 <td>Node Version</td>
@@ -20,7 +20,7 @@
 var vuemaker = require('gulp-vuemaker');
 
 gulp.task('default', function() {
-  return gulp.src('./lib/*.+(js|css|html)')
+  return gulp.src('./partials/*.+(js|coffee|css|scss|stylus|html|jade)')
     .pipe(vuemaker())
     .pipe(gulp.dest('./components/'));
 });
@@ -28,6 +28,14 @@ gulp.task('default', function() {
 
 This will make your .vue component files.
 
+### "scoped" support
+
+Add a one line multiline comment on the top (first line) of your style file with `vue` and `scoped` mentioned.
+
+```css
+/* vue:scoped */
+Your styles here…
+```
 
 ## LICENSE
 
