@@ -26,7 +26,7 @@ module.exports = function() {
       case '.scss':
         return {
           tag: 'style',
-          lang: 'sass',
+          lang: 'scss',
         };
       case '.styl':
         return {
